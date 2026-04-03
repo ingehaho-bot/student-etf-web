@@ -1,7 +1,9 @@
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
-plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei']  # 微軟正黑體
-plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams["font.sans-serif"] = ["Noto Sans CJK TC", "Noto Sans CJK SC", "Noto Sans CJK JP", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 import warnings
 from typing import Dict
 
