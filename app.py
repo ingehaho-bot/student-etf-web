@@ -281,7 +281,7 @@ def calculate_recommendation_score(result: dict) -> float:
 # =========================
 # 畫面
 # =========================
-st.title("大學生多標的 ETF 個人投資決策系統")
+st.title("🎯 大學生多標的 ETF 個人投資決策系統")
 st.write("輸入你的資料後，系統會用真實 ETF 歷史資料模擬定期定額結果。")
 
 col1, col2 = st.columns(2)
@@ -303,7 +303,7 @@ if st.button("開始分析", use_container_width=True):
 
     ok, disposable, reason = evaluate(income, expense, fund)
 
-    st.subheader("基本分析")
+    st.subheader("📊 基本分析")
     st.write(f"每月可支配金額：{disposable:.0f} 元")
 
     if not ok:
@@ -317,16 +317,16 @@ if st.button("開始分析", use_container_width=True):
         st.write(f"建議每月投資金額：{monthly_invest:.0f} 元")
         st.write(f"風險類型：{risk_type}")
 
-        st.subheader("依風險篩選後可考慮的 ETF")
+        st.subheader("📌 依風險篩選後可考慮的 ETF")
         st.write("、".join([f"{etf}（{category}）" for etf, category in filtered_etfs.items()]))
 
-        st.subheader("投資組合建議")
+        st.subheader("📦 投資組合建議")
         for key, value in advice.items():
             if key != "說明":
                 st.write(f"{key}配置：{'、'.join(value)}")
         st.info(advice["說明"])
 
-        st.subheader("下載並模擬 ETF 資料")
+        st.subheader("📡 下載並模擬 ETF 資料")
         with st.spinner("正在下載 ETF 歷史資料並模擬中..."):
             data = download_data()
 
@@ -370,18 +370,18 @@ if st.button("開始分析", use_container_width=True):
                 c1, c2 = st.columns(2)
 
                 with c1:
-                    st.subheader("整體績效最高")
+                    st.subheader("🏆 整體績效最高")
                     st.write(f"ETF：{best_overall}")
                     st.write(f"ETF 類型：{results[best_overall]['category']}")
                     st.write(f"最終資產：{results[best_overall]['final_value']:.0f} 元")
 
                 with c2:
-                    st.subheader("依你的風險偏好較推薦")
+                    st.subheader("✅ 依你的風險偏好較推薦")
                     st.write(f"ETF：{best_recommended}")
                     st.write(f"ETF 類型：{results[best_recommended]['category']}")
                     st.write(f"推薦分數：{results[best_recommended]['recommend_score']:.2f}")
 
-                st.subheader("ETF 模擬結果表")
+                st.subheader("📋 ETF 模擬結果表")
                 table_data = []
                 for etf, result in sorted(results.items(), key=lambda x: x[1]["final_value"], reverse=True):
                     table_data.append({
@@ -399,7 +399,7 @@ if st.button("開始分析", use_container_width=True):
                 result_df = pd.DataFrame(table_data)
                 st.dataframe(result_df, use_container_width=True)
 
-                st.subheader("ETF 成長圖")
+                st.subheader("📈 ETF 成長圖")
                 fig1, ax1 = plt.subplots(figsize=(12, 6))
                 for etf, df in histories.items():
                     if etf == best_overall:
@@ -416,7 +416,7 @@ if st.button("開始分析", use_container_width=True):
                 ax1.grid(True)
                 st.pyplot(fig1)
 
-                st.subheader("不同 ETF 最終資產比較")
+                st.subheader("📊 不同 ETF 最終資產比較")
                 sorted_items = sorted(results.items(), key=lambda x: x[1]["final_value"], reverse=True)
                 names = [k for k, _ in sorted_items]
                 values = [v["final_value"] for _, v in sorted_items]
