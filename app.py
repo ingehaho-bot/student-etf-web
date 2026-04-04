@@ -1,9 +1,3 @@
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib import font_manager
-
-plt.rcParams["font.sans-serif"] = ["Noto Sans CJK TC", "Noto Sans CJK SC", "Noto Sans CJK JP", "DejaVu Sans"]
-plt.rcParams["axes.unicode_minus"] = False
 import warnings
 from typing import Dict
 
@@ -13,6 +7,17 @@ import matplotlib.pyplot as plt
 import yfinance as yf
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+# =========================
+# Streamlit page config
+# =========================
+st.set_page_config(
+    page_title="Student ETF Investment Decision System",
+    layout="wide"
+)
+
+# 圖表避免中文字型問題：圖表全部用英文
+plt.rcParams["axes.unicode_minus"] = False
 
 # =========================
 # 基本設定
@@ -27,7 +32,7 @@ ETF_MAP: Dict[str, str] = {
     "00881": "00881.TW",
     "00757": "00757.TW",
     "00891": "00891.TW",
-    "00662": "00662.TW"
+    "00662": "00662.TW",
 }
 
 ETF_CATEGORY: Dict[str, str] = {
@@ -40,7 +45,7 @@ ETF_CATEGORY: Dict[str, str] = {
     "00881": "科技型",
     "00757": "全球科技型",
     "00891": "半導體型",
-    "00662": "美股成長型"
+    "00662": "美股成長型",
 }
 
 ETF_SUITABILITY: Dict[str, str] = {
@@ -53,21 +58,13 @@ ETF_SUITABILITY: Dict[str, str] = {
     "00881": "普通",
     "00757": "普通",
     "00891": "進階",
-    "00662": "進階"
+    "00662": "進階",
 }
 
 START_DATE = "2021-01-01"
 END_DATE = "2024-12-31"
 MIN_DISPOSABLE = 3000
 INVEST_RATIO = 0.30
-
-# =========================
-# Streamlit 基本設定
-# =========================
-st.set_page_config(page_title="大學生多標的 ETF 個人投資決策系統", layout="wide")
-
-plt.rcParams["font.sans-serif"] = ["Microsoft JhengHei", "SimHei", "Arial Unicode MS", "DejaVu Sans"]
-plt.rcParams["axes.unicode_minus"] = False
 
 
 # =========================
@@ -220,7 +217,6 @@ def simulate(price: pd.Series, monthly_invest: float):
 
     df = pd.DataFrame({"price": s})
     df.index = pd.to_datetime(df.index)
-
     monthly_df = df.resample("MS").first().dropna()
 
     shares = 0.0
@@ -263,7 +259,7 @@ def simulate(price: pd.Series, monthly_invest: float):
 
 
 # =========================
-# 推薦分數（新加）
+# 推薦分數
 # =========================
 def get_suitability_bonus(label: str) -> float:
     if label == "適合":
@@ -275,16 +271,9 @@ def get_suitability_bonus(label: str) -> float:
 
 
 def calculate_recommendation_score(result: dict) -> float:
-    """
-    推薦分數：
-    - 報酬率高加分
-    - 波動度高扣分
-    - 適合大學生加分
-    """
     roi = result["roi"]
     volatility = result["volatility"]
     suitability_bonus = get_suitability_bonus(result["suitability"])
-
     score = roi - (volatility * 0.6) + suitability_bonus
     return score
 
@@ -292,25 +281,29 @@ def calculate_recommendation_score(result: dict) -> float:
 # =========================
 # 畫面
 # =========================
-st.title("大學生多標的 ETF 個人投資決策系統")
+st.title("🎯 大學生多標的 ETF 個人投資決策系統")
 st.write("輸入你的資料後，系統會用真實 ETF 歷史資料模擬定期定額結果。")
 
-income = st.number_input("請輸入每月收入", min_value=0.0, step=100.0)
-expense = st.number_input("請輸入每月支出", min_value=0.0, step=100.0)
-fund = st.selectbox("是否有預備金", ["有", "沒有"])
+col1, col2 = st.columns(2)
 
-risk_choice = st.selectbox(
-    "請選擇你的投資風險接受程度",
-    ["1：幾乎不能虧（保守）", "2：小幅波動可接受（穩健）", "3：可以接受較大波動（積極）"]
-)
+with col1:
+    income = st.number_input("請輸入每月收入", min_value=0.0, step=100.0)
+    expense = st.number_input("請輸入每月支出", min_value=0.0, step=100.0)
 
-if st.button("開始分析"):
+with col2:
+    fund = st.selectbox("是否有預備金", ["有", "沒有"])
+    risk_choice = st.selectbox(
+        "請選擇你的投資風險接受程度",
+        ["1：幾乎不能虧（保守）", "2：小幅波動可接受（穩健）", "3：可以接受較大波動（積極）"]
+    )
+
+if st.button("開始分析", use_container_width=True):
     choice_value = risk_choice[0]
     risk_value, risk_type = classify_risk_from_choice(choice_value)
 
     ok, disposable, reason = evaluate(income, expense, fund)
 
-    st.subheader("基本分析")
+    st.subheader("📊 基本分析")
     st.write(f"每月可支配金額：{disposable:.0f} 元")
 
     if not ok:
@@ -324,17 +317,16 @@ if st.button("開始分析"):
         st.write(f"建議每月投資金額：{monthly_invest:.0f} 元")
         st.write(f"風險類型：{risk_type}")
 
-        st.subheader("依風險篩選後可考慮的 ETF")
-        for etf, category in filtered_etfs.items():
-            st.write(f"- {etf}（{category}）")
+        st.subheader("📌 依風險篩選後可考慮的 ETF")
+        st.write("、".join([f"{etf}（{category}）" for etf, category in filtered_etfs.items()]))
 
-        st.subheader("投資組合建議")
+        st.subheader("📦 投資組合建議")
         for key, value in advice.items():
             if key != "說明":
                 st.write(f"{key}配置：{'、'.join(value)}")
         st.info(advice["說明"])
 
-        st.subheader("下載並模擬 ETF 資料")
+        st.subheader("📡 下載並模擬 ETF 資料")
         with st.spinner("正在下載 ETF 歷史資料並模擬中..."):
             data = download_data()
 
@@ -364,7 +356,6 @@ if st.button("開始分析"):
                         "suitability": ETF_SUITABILITY.get(etf, "未知")
                     }
                     results[etf]["recommend_score"] = calculate_recommendation_score(results[etf])
-
                     histories[etf] = history_df
 
                 except Exception:
@@ -373,27 +364,24 @@ if st.button("開始分析"):
             if not results:
                 st.error("沒有可用的模擬結果。")
             else:
-                # 整體最終資產最高
                 best_overall = max(results, key=lambda x: results[x]["final_value"])
-
-                # 風險偏好下最推薦
                 best_recommended = max(results, key=lambda x: results[x]["recommend_score"])
 
-                col1, col2 = st.columns(2)
+                c1, c2 = st.columns(2)
 
-                with col1:
-                    st.subheader("整體績效最高")
+                with c1:
+                    st.subheader("🏆 整體績效最高")
                     st.write(f"ETF：{best_overall}")
                     st.write(f"ETF 類型：{results[best_overall]['category']}")
                     st.write(f"最終資產：{results[best_overall]['final_value']:.0f} 元")
 
-                with col2:
-                    st.subheader("依你的風險偏好較推薦")
+                with c2:
+                    st.subheader("✅ 依你的風險偏好較推薦")
                     st.write(f"ETF：{best_recommended}")
                     st.write(f"ETF 類型：{results[best_recommended]['category']}")
                     st.write(f"推薦分數：{results[best_recommended]['recommend_score']:.2f}")
 
-                st.subheader("ETF 模擬結果表")
+                st.subheader("📋 ETF 模擬結果表")
                 table_data = []
                 for etf, result in sorted(results.items(), key=lambda x: x[1]["final_value"], reverse=True):
                     table_data.append({
@@ -411,24 +399,24 @@ if st.button("開始分析"):
                 result_df = pd.DataFrame(table_data)
                 st.dataframe(result_df, use_container_width=True)
 
-                st.subheader("ETF 成長圖")
+                st.subheader("📈 ETF 成長圖")
                 fig1, ax1 = plt.subplots(figsize=(12, 6))
                 for etf, df in histories.items():
                     if etf == best_overall:
-                        ax1.plot(df["date"], df["value"], linewidth=3, label=f"{etf} ⭐績效最高")
+                        ax1.plot(df["date"], df["value"], linewidth=3, label=f"{etf} - Best Performance")
                     elif etf == best_recommended:
-                        ax1.plot(df["date"], df["value"], linewidth=2.5, label=f"{etf} ✅較推薦")
+                        ax1.plot(df["date"], df["value"], linewidth=2.5, label=f"{etf} - Recommended")
                     else:
                         ax1.plot(df["date"], df["value"], linestyle="--", linewidth=1.6, label=etf)
 
-                ax1.set_title("多標的 ETF 定期定額投資成長（真實歷史資料）")
-                ax1.set_xlabel("時間")
-                ax1.set_ylabel("資產（元）")
+                ax1.set_title("ETF DCA Growth Comparison")
+                ax1.set_xlabel("Date")
+                ax1.set_ylabel("Portfolio Value")
                 ax1.legend()
                 ax1.grid(True)
                 st.pyplot(fig1)
 
-                st.subheader("不同 ETF 最終資產比較")
+                st.subheader("📊 不同 ETF 最終資產比較")
                 sorted_items = sorted(results.items(), key=lambda x: x[1]["final_value"], reverse=True)
                 names = [k for k, _ in sorted_items]
                 values = [v["final_value"] for _, v in sorted_items]
@@ -446,8 +434,8 @@ if st.button("開始分析"):
                         fontsize=9
                     )
 
-                ax2.set_title("不同 ETF 最終資產比較")
+                ax2.set_title("Final Portfolio Value by ETF")
                 ax2.set_xlabel("ETF")
-                ax2.set_ylabel("最終資產（元）")
+                ax2.set_ylabel("Final Value")
                 ax2.grid(axis="y")
                 st.pyplot(fig2)
